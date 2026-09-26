@@ -1,0 +1,44 @@
+# Rubric: is this reproduction package ready to post?
+
+## Checks
+
+| Check | Evidence | Pass condition | Weight |
+|---|---|---|---|
+| `env-recorded` | The environment record in the candidate repro report (project version or commit, OS or platform, build or install notes), read against the environment the issue states and the "bug reports:" template asks under Repo facts. Live mode: the draft repro comment against the issue body and the repo's bug-report template. | The report states **what it ran and where**: the project's version, release, or commit, **and** the OS or platform. When the issue says the behavior depends on an environment factor (build profile, runtime or language version, platform, a config setting), the report also states the value it ran with. Fails when there is **no environment record**, or when the record leaves out the factor the issue says changes the failure. It does not have to answer every template field or match the issue's environment; whether a difference matters is judged under `faithful-to-issue`. | required |
+| `steps-rerunnable` | The steps in the candidate repro report, read as a stranger starting from the environment the report records. Live mode: the draft repro comment alone; files in the author's working directory that the draft does not quote do not count. | Every action from the starting state to the trigger is something a stranger can do **from the text alone**: a shown command, a quoted input, or a concrete UI action ("focus the file, press `s`, type a name, Enter"). Any input the trigger depends on is quoted or its contents given. Terse is fine, and reusing the issue's own reproduction passes when the report says it ran it unchanged. Fails on a step nobody else can perform ("set up the project", "use my config", "trigger the bug"), on an input the report relies on but never shows, or when there are no steps at all. | required |
+| `faithful-to-issue` | The trigger the candidate repro report ran (its command, input, and conditions, and the version in its environment record), set against the issue's reproduction and the version the issue targets: the version the issue names, or the latest release under Repo facts when the issue says it was confirmed on the latest version or main. | The report exercises **the issue's trigger**: the input, command, or condition the issue identifies as producing the failure, run on **the version the issue targets or a newer one**. Differences that do not touch the trigger pass without comment: a command alias, an output or offline flag, a different host or file name, or a **reduced input** that keeps the element the issue says triggers the failure (a minimal repro), as long as the report shows or concretely describes the input it used. Fails on an unnamed change to the trigger element itself (a swapped operator in the triggering input, a removed flag the failure depends on), on steps that stop before the trigger, on a run on an **older version** than the issue targets that the report does not name as a deviation, and on any other environment difference the issue ties to the failure that the report does not acknowledge. A different OS or platform alone does not fail unless the issue ties the failure to it. When the issue gives no exact input, a report that builds its own passes if it shows that input and it fits the issue's description. | required |
+| `behavior-matches` | The artifacts in the candidate repro report (output excerpts, logs, tracebacks, test results, screenshots), read against the actual behavior the issue describes. | An artifact **shown in the report** contains the issue's **failure signature**: the same exception type or error text, panic message, exit status, wrong value, or missing effect the issue describes. The report's prose saying it matches is not enough; the artifact has to show it. A **different** failure fails, even at the same spot and even when the report calls it the same class of failure (a parse error is not the issue's panic). An **honest cannot-reproduce passes**: the report shows the output of a faithful attempt and says the issue's behavior did not appear. Fails when there is no artifact at all. | required |
+| `claims-backed` | Every statement of fact about what happened, in the candidate repro report and in the candidate claim comment ("reproduced", "confirmed on X", "every time", "on all my machines", "the cause is ..."), each set against the artifact it rests on. | Each such statement is **shown by an artifact in the report** or is **marked as a guess** ("I suspect", "likely", "not yet confirmed"). A cause backed by a quoted code line, a trace, or an output excerpt passes. A specific count of the author's own runs ("ran it 5 times, same order every run") passes when one representative artifact from those runs is shown: the count says what the author did, and the artifact shows what a run looks like. Fails on any statement larger than its evidence: sweeping frequency or scope with no artifact behind it ("happens all the time", "on all my machines", "everyone has this"), a cause asserted as found when it is the issue's own guess or no one's, or "exactly what the issue describes" over an artifact that shows something else. This check owns statements about what **did** happen; promises about what **will** happen belong to `claim-specific`. | required |
+| `claim-specific` | The candidate claim comment, read against the issue. | The comment is **about this issue**: it names something only this issue has (the function, command, input, error, or symptom) **and** a concrete next step the author will take. It promises only what the author controls: stating a planned approach ("plan: make the untracked case warn") passes, but promising an outcome, a date, or certainty fails ("complete and rigorous reproduction", "confident I understand the decoder path", "a PR by Friday"). Fails on boilerplate that would fit any issue ("I'd like to work on this, please assign me"), on a bare "+1" or "claiming this", and on pressure aimed at maintainers ("should be top priority", "please fix it soon"). | required |
+| `conventions-respected` | The "contribution policy" line under Repo facts, read against both candidate comments. Live mode: `CONTRIBUTING.md` in the repo root, `.github/`, or `docs/`, plus any `AI_POLICY.md`, `AI_USAGE_POLICY.md`, or `AGENTS.md`, read against the drafts. | When the policy **requires** something of contributors' comments, the comments meet it. The live case is **AI disclosure**: when the policy asks contributors to disclose AI assistance, this passes only if the claim comment or the repro report carries a disclosure statement. **Silence passes.** So does a description of how maintainers work ("reviews outside PRs selectively", "AI-generated PRs are hard to assess"): that is context, not a requirement on the comment. | required |
+
+## Verdict rule
+
+Accept only if **every `required` check passes**. A single required `fail` holds the package.
+
+`unclear` counts as **fail**: proof I cannot verify is proof that is not ready to post.
+
+**Claim-only drafts (live mode, before the claim goes up).** `env-recorded`, `steps-rerunnable`,
+`faithful-to-issue`, and `behavior-matches` read the repro report, so they are reported as
+`unclear` with evidence `not yet applicable: claim-only draft` and left out of the verdict.
+`claim-specific` and `conventions-respected` are graded as usual. `claims-backed` is graded on the
+claim comment alone: a claim that says the bug is already reproduced, confirmed, or diagnosed
+fails, because nothing backs it yet. The claim goes up before the reproduction, so it promises
+and does not assert.
+
+### Where the lines sit, and why
+
+- **This rubric grades the proof, not the issue.** Nothing here asks whether the issue is free,
+  bounded, or alive; Unit 1's rubric did that. A thread comment like "pushed a fix for this" does
+  not fail any check.
+- **Recording and matching are separate checks.** `env-recorded` asks only whether the report says
+  what it ran and where; it fails a report that never says, most of all when the issue ties the
+  failure to the environment. `faithful-to-issue` asks whether that environment can speak to the
+  issue: the issue's version or a newer one, or another OS, can; an older version than the one
+  the issue was confirmed on is a different program, and has to be named as a deviation.
+- **The trigger is what has to be faithful, not the transcript.** An alias, an output flag, or a
+  minimal input that keeps the triggering element is still the issue's experiment. A changed
+  triggering input is a different experiment, however small the edit.
+- **A plan is not a promise.** `claim-specific` lets the author describe the approach they intend
+  to take. It fails promises of outcomes, dates, or certainty, which the author cannot back when
+  the claim goes up.
